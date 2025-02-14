@@ -1,0 +1,48 @@
+# Vagrantfile for Python/Django/React development
+Vagrant.configure("2") do |config|
+    # Base image
+    config.vm.box = "ubuntu/focal64"
+  
+    # Machine configuration
+    config.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048"
+      vb.cpus = 2
+    end
+  
+    # Port forwarding
+    config.vm.network "forwarded_port", guest: 8000, host: 8000  # Django
+    config.vm.network "forwarded_port", guest: 8050, host: 8050  # Dash app
+  
+    # Sync project directory
+    config.vm.synced_folder ".", "/home/vagrant/app"
+  
+    # Provisioning
+    config.vm.provision "shell", inline: <<-SHELL
+      # Update and install necessary packages
+      sudo apt-get update
+      sudo apt-get install -y python3-pip python3-venv build-essential git curl
+  
+      # Create a virtual environment
+      cd /home/vagrant/app
+      python3 -m venv venv
+  
+      # Activate virtual environment and install requirements
+      source venv/bin/activate
+      pip install -r requirements.txt
+  
+      # Install Reflex for the front end if needed
+      pip install reflex
+  
+      # Install OpenAI API if needed
+      pip install openai
+  
+      # Set environment variables for Reflex
+      echo "export PYTHONUNBUFFERED=1" >> /home/vagrant/.bashrc
+      echo "export VIRTUAL_ENV=/home/vagrant/app/venv" >> /home/vagrant/.bashrc
+      echo "export PATH=\"/home/vagrant/app/venv/bin:$PATH\"" >> /home/vagrant/.bashrc
+  
+      # Ensure permissions
+      sudo chown -R vagrant:vagrant /home/vagrant/app
+    SHELL
+  end
+  
